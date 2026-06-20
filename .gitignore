@@ -2,3 +2,6 @@
 *.pdf
 _site/
 node_modules/
+
+CLAUDE.md
+plan.md
