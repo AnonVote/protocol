@@ -205,7 +205,7 @@ It must **not** contain: `voterIdentifier`, `identifierHash`, `rawToken`, `token
    - `ballotId` matches request
    - `used === false`
    - `revokedAt IS NULL`
-4. **Validate ballot state.** Ballot exists and `status !== CLOSED`.
+4. **Validate ballot state.** Ballot exists, `status !== CLOSED`, and `now() <= ballot.deadline` (if a deadline is set).
 5. **Validate option.** `optionId` belongs to the ballot's option set.
 6. **Load encryption key.** Resolve per-ballot AES-256 key from secret storage (see [`specs/crypto.md` §7](crypto.md)).
 7. **Encrypt choice.** `encryptedPayload = encryptVote(optionId, ballotKey)`.
@@ -558,6 +558,23 @@ A contributor implementing the token flow from this document alone should verify
 - [ ] Phase 5 sets `used = true` on redemption; never hard-deletes `VoterToken` rows
 - [ ] No audit event contains raw identifier, raw token, or token hash
 - [ ] Stellar/Soroban writes are fire-and-forget after DB commit
+
+---
+
+## Implementation alignment (AnonVote/core)
+
+This section records the delta between this normative spec and the current `AnonVote/core` implementation. It does not change the requirements above; core should converge to this document over time.
+
+| Area | This spec (normative) | Current core behaviour |
+| --- | --- | --- |
+| Schema | `activeTokenHash`, `issuanceGeneration` on `EligibilityEntry`; `revokedAt`, `issuanceGeneration` on `VoterToken` | Fields not yet in `schema.prisma` |
+| Reissue | Soft-revoke old token via `revokedAt`; link entry to active token via `activeTokenHash` | Deletes one arbitrary unused `VoterToken` row; no per-entry token link |
+| Reissue rate limit | Per `(ballotId, identifierHash)` cooldown (min. 1 / 60 min) | IP-based `strictRateLimiter` only |
+| Redemption atomicity | Token re-read `FOR UPDATE` inside transaction | Single `$transaction` without row lock; no `revokedAt` check |
+| Token delivery | HTTPS default; optional email channel | HTTPS response only (matches default path) |
+| Privacy logging | No raw identifiers in logs | `issueToken` debug logs include raw `voterIdentifier` (see [`crypto-integration-guide.md`](crypto-integration-guide.md)) |
+
+Tracking issue for core alignment should reference the schema and reissue changes above as the highest-priority gaps.
 
 ---
 

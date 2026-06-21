@@ -1,5 +1,7 @@
 # Token Flow
 
+> **Deprecated.** The authoritative specification is [`specs/token-flow.md`](specs/token-flow.md). This file is kept for quick reference only and may lag behind the normative spec.
+
 How a voter identity becomes a token, and a token becomes a vote.
 
 ---
