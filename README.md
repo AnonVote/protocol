@@ -28,6 +28,7 @@ This repo is the canonical source of truth for how AnonVote works — the crypto
 | [`specs/token-flow.md`](specs/token-flow.md)           | Token issuance and vote submission flow                                      |
 | [`specs/smart-contracts.md`](specs/smart-contracts.md) | On-chain audit contract specification                                        |
 | [`specs/api.md`](specs/api.md)                         | REST API surface specification                                               |
+| [`specs/errors.md`](specs/errors.md)                   | Language-agnostic protocol error code specification                          |
 
 ---
 

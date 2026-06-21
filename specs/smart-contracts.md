@@ -32,23 +32,23 @@ All keys use `ballot_id_hash` = SHA-256 hex of the ballot UUID. Raw IDs are neve
 
 #### `initialize(admin: Address)`
 
-One-time initialization. Sets the admin address. Panics if already initialized.
+One-time initialization. Sets the admin address. Fails with `AVE-CONTRACT-002` if already initialized.
 
 #### `record_ballot(caller: Address, ballot_id_hash: String)`
 
-Register a ballot on-chain. Initializes `TokensIssued` and `VotesCast` to 0. Panics if ballot already recorded.
+Register a ballot on-chain. Initializes `TokensIssued` and `VotesCast` to 0. Fails with `AVE-CONTRACT-002` if the ballot is already recorded.
 
 #### `record_token(caller: Address, ballot_id_hash: String)`
 
-Increment `TokensIssued` for a ballot. Panics if ballot not found.
+Increment `TokensIssued` for a ballot. Fails with `AVE-BALLOT-001` if the ballot is not found.
 
 #### `record_vote(caller: Address, ballot_id_hash: String)`
 
-Increment `VotesCast` for a ballot. Panics if ballot not found.
+Increment `VotesCast` for a ballot. Fails with `AVE-BALLOT-001` if the ballot is not found.
 
 #### `record_result(caller: Address, ballot_id_hash: String, result_hash: String)`
 
-Record the SHA-256 of the tally JSON. Immutable once set — panics if result already recorded.
+Record the SHA-256 of the tally JSON. Immutable once set — fails with `AVE-CONTRACT-002` if the result is already recorded.
 
 ---
 
@@ -73,6 +73,12 @@ Returns whether a ballot has been registered on-chain.
 #### `is_consistent(ballot_id_hash: String) → bool`
 
 Returns `true` if `tokens_issued == votes_cast`. View call.
+
+---
+
+## Error handling
+
+Smart contract implementations MUST map native contract errors, panics, or result variants to the protocol error codes in [`errors.md`](errors.md). SDK wrappers MUST expose those protocol codes at their public boundary even when the contract runtime represents failures as numeric discriminants.
 
 ---
 
