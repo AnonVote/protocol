@@ -148,22 +148,25 @@ Identifiers are SHA-256 hashed server-side. Raw identifiers are never stored.
 
 ---
 
-## Error format
+## Errors
 
-All errors follow a consistent envelope:
+AnonVote protocol errors are standardized in [`specs/errors.md`](specs/errors.md). API implementations SHOULD return the protocol `code` in every error response and clients SHOULD branch on that code rather than on human-readable text.
 
 ```json
 {
-  "error": "BadRequest",
+  "code": "AVE-REQ-002",
   "message": "Human-readable description"
 }
 ```
 
-| Status | Error key            | When                                     |
-| ------ | -------------------- | ---------------------------------------- |
-| 400    | `BadRequest`         | Invalid input                            |
-| 401    | `Unauthorized`       | Missing or expired session               |
-| 403    | `Forbidden`          | Authenticated but not permitted          |
-| 404    | `NotFound`           | Resource not found                       |
-| 409    | `AlreadyVoted`       | Token already used to vote               |
-| 409    | `TokenAlreadyIssued` | Token already issued for this identifier |
+Common HTTP mappings include:
+
+| Status | Protocol code examples | When |
+| ------ | ---------------------- | ---- |
+| 400 | `AVE-REQ-001`, `AVE-REQ-002`, `AVE-BALLOT-002`, `AVE-TOKEN-003`, `AVE-VOTE-001` | Malformed payloads or invalid request data |
+| 401 | `AVE-AUTH-001` | Missing, expired, or invalid authentication |
+| 403 | `AVE-AUTH-002`, `AVE-BALLOT-003`, `AVE-BALLOT-004` | Authenticated but not permitted, or action not allowed in current ballot state |
+| 404 | `AVE-BALLOT-001`, `AVE-ELIG-001`, `AVE-TOKEN-002`, `AVE-TALLY-003` | Referenced resource or result not found |
+| 409 | `AVE-TOKEN-001`, `AVE-VOTE-002`, `AVE-TALLY-002`, `AVE-CONTRACT-002` | Duplicate or conflicting protocol state |
+| 429 | `AVE-REQ-004` | Rate limit exceeded |
+| 500/503 | `AVE-VOTE-003`, `AVE-CRYPTO-002`, `AVE-CONTRACT-003`, `AVE-AUDIT-001` | Required persistence, cryptographic, contract, or audit operation failed |

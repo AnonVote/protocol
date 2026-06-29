@@ -305,48 +305,24 @@ The issue text lists parameters as `ballot_id` and `tally`; this specification i
 
 ### Parameters
 
-| Parameter | Type | Description | Constraints |
-| --- | --- | --- | --- |
-| `env` | `Env` | Soroban execution environment. | Provided by Soroban runtime. |
-| `admin` | `Address` | Address authorized to publish final results. | Must equal stored `DataKey::Admin`; must authenticate. |
-| `ballot_id` | `BytesN<32>` | Ballot whose result is being finalised. | Exactly 32 bytes. Must exist. |
-| `tally` | `Map<Bytes, u32>` | Final tally by opaque option key. | Keys are raw `Bytes`; values are `u32` counts. Map may be empty only if the ballot had zero valid votes. |
+One-time initialization. Sets the admin address. Fails with `AVE-CONTRACT-002` if already initialized.
 
 ### Return type
 
-`Result<(), ContractError>`.
+Register a ballot on-chain. Initializes `TokensIssued` and `VotesCast` to 0. Fails with `AVE-CONTRACT-002` if the ballot is already recorded.
 
 - `Ok(())` means the final tally was written and the ballot can no longer accept votes.
 - `Err(...)` means no result record was written and the ballot status was not changed.
 
-### Preconditions
+Increment `TokensIssued` for a ballot. Fails with `AVE-BALLOT-001` if the ballot is not found.
 
 The call succeeds only if:
 
-1. `admin.require_auth()` succeeds.
-2. `admin` equals the stored admin address.
-3. `DataKey::Ballot(ballot_id)` exists.
-4. `env.ledger().timestamp() > ballot.deadline`.
-5. Ballot status is not already `BallotStatus::Finalised`.
-6. `DataKey::Result(ballot_id)` does not already exist.
-7. Every tally key is a `Bytes` value and every tally count is a `u32`, enforced by the Soroban ABI.
+Increment `VotesCast` for a ballot. Fails with `AVE-BALLOT-001` if the ballot is not found.
 
 ### Postconditions on success
 
-1. A `ResultRecord` is written to persistent storage under `DataKey::Result(ballot_id)`.
-2. The stored `BallotRecord.status` is updated to `BallotStatus::Finalised`.
-3. `finalised_at` equals `env.ledger().timestamp()`.
-4. No future `record_vote` call can succeed for the ballot.
-5. A `result_finalised` event is emitted exactly once.
-
-### Errors
-
-| Error | Trigger |
-| --- | --- |
-| `ContractError::Unauthorized` | `admin` is not the stored admin or did not authorize the transaction. |
-| `ContractError::BallotNotFound` / `BALLOT_NOT_FOUND` | `DataKey::Ballot(ballot_id)` does not exist. |
-| `ContractError::BallotStillOpen` / `BALLOT_STILL_OPEN` | Ledger timestamp is less than or equal to deadline. |
-| `ContractError::AlreadyFinalised` / `ALREADY_FINALISED` | Ballot status is already `Finalised` or `DataKey::Result(ballot_id)` exists. |
+Record the SHA-256 of the tally JSON. Immutable once set — fails with `AVE-CONTRACT-002` if the result is already recorded.
 
 ---
 
@@ -475,7 +451,13 @@ View functions are permissionless and must not mutate state.
 
 ---
 
-## 8. Core TypeScript service compatibility
+## Error handling
+
+Smart contract implementations MUST map native contract errors, panics, or result variants to the protocol error codes in [`errors.md`](errors.md). SDK wrappers MUST expose those protocol codes at their public boundary even when the contract runtime represents failures as numeric discriminants.
+
+---
+
+## Integration with core
 
 The core TypeScript service stub must encode parameters as follows:
 
